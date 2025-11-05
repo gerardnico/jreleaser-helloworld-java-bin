@@ -6,34 +6,17 @@ on:
       version:
         description: 'Release version'
         required: true
+  # Trigger on tag push
+  push:
+    tags:
+      - 'v*'
 
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRO: 'zulu'
 
 jobs:
-  precheck:
-    name: Precheck
-    runs-on: ubuntu-latest
-    outputs:
-      VERSION: ${{ steps.vars.outputs.VERSION }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Version
-        id: vars
-        shell: bash
-        run: |
-          VERSION=${{ github.event.inputs.version }}
-          ./mvnw -B versions:set versions:commit -DnewVersion=$VERSION
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "GitHub Action"
-          git commit -a -m "Releasing version $VERSION"
-          git push origin main
-
   release:
-    needs: [ precheck ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

@@ -19,6 +19,7 @@ project:
 release:
   github:
     overwrite: true
+    skipTag: true
     changelog:
       formatted: ALWAYS
       preset: conventional-commits
