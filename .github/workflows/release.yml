@@ -19,6 +19,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - name: Extract version
+        run: |
+          VERSION=$(echo "${{ github.ref_name }}" | cut -c 2-)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -32,24 +37,32 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
           cache: maven
 
+      - name: Maven Setup JDKs
+        # The shell is bash on Linux and Powershell in Windows
+        run: ./mvnw --no-transfer-progress --batch-mode --file pom.xml -Pjdks
+
       - name: Build
         run: ./mvnw -ntp -B --file pom.xml verify
+
+      - name: Display structure of files
+        run: ls -R
 
       - name: Assemble
         uses: jreleaser/release-action@v2
         with:
-          arguments: assemble
+          arguments: assemble --debug
         env:
-          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ env.VERSION }}
+          JRELEASER_OUTPUT_DIRECTORY: target
           
       - name: Release
         uses: jreleaser/release-action@v2
         with:
-          arguments: full-release
+          arguments: full-release --debug
         env:
-          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PROJECT_VERSION: ${{ env.VERSION }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          JRELEASER_OUTPUT_DIRECTORY: target
 
       - name: JReleaser output
         if: always()
@@ -57,5 +70,5 @@ jobs:
         with:
           name: jreleaser-release
           path: |
-            out/jreleaser/trace.log
-            out/jreleaser/output.properties
+            target/jreleaser/trace.log
+            target/jreleaser/output.properties

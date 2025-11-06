@@ -16,23 +16,44 @@ project:
       artifactId: helloworld
       mainClass: org.jreleaser.examples.HelloWorld
 
+
+# Create a GitHub release
+# https://jreleaser.org/guide/latest/reference/release/github.html
 release:
   github:
-    overwrite: true
+    overwrite: true # Overwrite will delete the release
+    # We create the tag
     skipTag: true
-    changelog:
-      formatted: ALWAYS
-      preset: conventional-commits
-      contributors:
-        format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}'
 
+# Assemble create artifacts that can be distributed
+# Distribution uses them to define the set of artifacts in the release
+# Run it with:
+#   jreleaser assemble
 assemble:
+  # Execute it with
+  #    jreleaser assemble --assembler javaArchive
   javaArchive:
-    helloworld:
+    hello-world-nojre:
       active: ALWAYS
-      formats: [ ZIP ]
+      exported: true # The artifacts generated will be used in the distribution called doc-exec-nojre
+      archiveName: '{{projectJavaArtifactId}}-{{projectEffectiveVersion}}-nojre'
+      formats:
+        - ZIP
+        - TAR_GZ
       fileSets:
         - input: '.'
           includes: [ 'LICENSE' ]
       mainJar:
-        path: target/{{distributionName}}-{{projectVersion}}.jar
+        path: target/{{projectJavaArtifactId}}-{{projectVersion}}.jar
+      swid:
+        tagRef: swid-tag
+  # Execute it with `jreleaser assemble --assembler jlink`
+  # https://jreleaser.org/guide/latest/reference/assemble/jlink.html
+
+# Distributions defines the uploaded artifacts in the release
+# It defines artifacts that may be published using supported packages and announced with supported announcers.
+# https://jreleaser.org/guide/latest/reference/distributions.html
+distributions:
+  # Java Archive Distributions (ie JAVA_BINARY)
+  doc-exec-nojre:
+    type: JAVA_BINARY
